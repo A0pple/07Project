@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wikipedia Pageviews</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <h1>Wikipedia Pageviews</h1>
+      <p id="subtitle">Explore how often an article was viewed in the last 60 days on en-wiki.</p>
+    </header>
+
+    <main class="app-main">
+      <section class="search-card">
+        <div class="search-bar">
+          <label class="sr-only" for="article-input">Article title</label>
+          <input id="article-input" type="text" placeholder="Search for an article" autocomplete="off" />
+          <button id="fetch-button" type="button">Fetch views</button>
+        </div>
+
+        <div class="suggestions">
+          <div class="suggestions-heading" id="suggestions-heading">Trending this week</div>
+          <div class="suggestions-track" id="suggestions-track"></div>
+        </div>
+
+        <div class="filters">
+          <div class="filter">
+            <label for="range-input">Range</label>
+            <output id="range-output">60 days</output>
+            <input id="range-input" type="range" min="7" max="365" value="60" />
+          </div>
+          <div class="filter">
+            <label for="language-select">Language</label>
+            <select id="language-select">
+              <option value="en.wikipedia.org">en-wiki</option>
+              <option value="he.wikipedia.org">he-wiki</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="status" id="status">Ready.</div>
+
+        <div class="table-wrapper">
+          <table id="results-table">
+            <thead>
+              <tr>
+                <th data-column="date">Date</th>
+                <th data-column="views">Views</th>
+                <th data-column="edits">Edits</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="chart" id="chart-container">
+          <canvas id="chart" width="800" height="220" aria-label="Pageviews chart"></canvas>
+        </div>
+
+        <div class="totals" id="totals">Totals — views: –, edits: –</div>
+        <p class="hint">Tip: double-click a row to open a same-day Google search. Columns are sortable.</p>
+      </section>
+    </main>
+  </div>
+
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+
+  <script src="main.js" type="module"></script>
+</body>
+</html>
