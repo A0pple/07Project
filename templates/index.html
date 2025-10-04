@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wikipedia Red Link Scanner</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="container">
+        <h1>Wikipedia Red Link Scanner</h1>
+        <p>
+          Explore Wikipedia for missing English articles and discover short existing pages without leaving your
+          browser. Start the scanners below and watch the results stream live.
+        </p>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card" id="redlinks-section">
+        <div class="card-header">
+          <div>
+            <h2>Red Link Scanner</h2>
+            <p class="card-subtitle">
+              Looks through Wikipedia pages (random or from a category) and lists missing articles including an
+              approximate web search footprint.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn" id="redlink-start">Start</button>
+            <button class="btn" id="redlink-stop">Stop</button>
+            <button class="btn" id="redlink-clear">Clear</button>
+            <button class="btn" id="redlink-export">Export CSV</button>
+          </div>
+        </div>
+
+        <form class="controls" id="redlink-form">
+          <div class="form-group">
+            <label for="redlink-rpm">Requests per minute cap</label>
+            <input type="number" id="redlink-rpm" min="5" max="240" value="{{ default_rpm }}" />
+          </div>
+          <div class="form-group">
+            <label for="redlink-category">Category (optional)</label>
+            <input
+              type="text"
+              id="redlink-category"
+              placeholder="Physics or Category:Hebrew-language films"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-group">
+            <label for="redlink-links">Red links per page (0 = unlimited)</label>
+            <input type="number" id="redlink-links" min="0" max="500" value="25" />
+          </div>
+          <div class="form-group">
+            <label for="redlink-filter">Filter results</label>
+            <input type="search" id="redlink-filter" placeholder="Type to filter" autocomplete="off" />
+          </div>
+        </form>
+
+        <div class="status-bar">
+          <p>Status: <span id="redlink-status">Idle</span></p>
+          <p id="redlink-elapsed"></p>
+        </div>
+
+        <div class="stats" id="redlink-stats">
+          <div class="stat">
+            <span class="label">Scanned</span>
+            <span class="value" id="redlink-scanned">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Red Links</span>
+            <span class="value" id="redlink-count">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Errors</span>
+            <span class="value" id="redlink-errors">0</span>
+          </div>
+        </div>
+
+        <div class="category-bar">
+          {% for cat in categories %}
+          <span class="chip" data-category="{{ cat }}">
+            <span class="chip-label">{{ cat }}</span>
+            <span class="chip-value" id="cat-{{ cat | replace(' ', '-') | lower }}">0</span>
+          </span>
+          {% endfor %}
+        </div>
+
+        <div class="table-wrapper">
+          <table id="redlink-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Missing Article</th>
+                <th>Found On</th>
+                <th>Redirects</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <details class="debug-panel">
+          <summary>Debug log</summary>
+          <ul id="redlink-debug"></ul>
+        </details>
+      </section>
+
+      <section class="card" id="short-section">
+        <div class="card-header">
+          <div>
+            <h2>Short Article Finder</h2>
+            <p class="card-subtitle">
+              Finds existing Wikipedia pages under a specified byte threshold. Perfect for locating stubs that could
+              use expansion.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn" id="short-start">Start</button>
+            <button class="btn" id="short-stop">Stop</button>
+            <button class="btn" id="short-clear">Clear</button>
+            <button class="btn" id="short-export">Export CSV</button>
+          </div>
+        </div>
+
+        <form class="controls" id="short-form">
+          <div class="form-group">
+            <label for="short-rpm">Requests per minute cap</label>
+            <input type="number" id="short-rpm" min="5" max="240" value="{{ default_rpm }}" />
+          </div>
+          <div class="form-group">
+            <label for="short-category">Category (optional)</label>
+            <input
+              type="text"
+              id="short-category"
+              placeholder="Leave blank for random"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-group">
+            <label for="short-max">Max bytes</label>
+            <input type="number" id="short-max" min="500" max="500000" step="100" value="8000" />
+          </div>
+          <div class="form-group">
+            <label for="short-filter">Filter results</label>
+            <input type="search" id="short-filter" placeholder="Type to filter" autocomplete="off" />
+          </div>
+        </form>
+
+        <div class="status-bar">
+          <p>Status: <span id="short-status">Idle</span></p>
+          <p id="short-elapsed"></p>
+        </div>
+
+        <div class="stats" id="short-stats">
+          <div class="stat">
+            <span class="label">Scanned</span>
+            <span class="value" id="short-scanned">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Matches</span>
+            <span class="value" id="short-count">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Errors</span>
+            <span class="value" id="short-errors">0</span>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table id="short-table">
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th>Bytes</th>
+                <th>Touched</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <details class="debug-panel">
+          <summary>Debug log</summary>
+          <ul id="short-debug"></ul>
+        </details>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <div class="container">
+        <p>
+          Built with Flask. All data fetched from the public Wikipedia APIs. Use the controls above to manage API
+          usage and ensure you stay within reasonable limits.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      const CATEGORY_ORDER = {{ categories|tojson }};
+      const DEFAULT_RPM = {{ default_rpm }};
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  </body>
+</html>
